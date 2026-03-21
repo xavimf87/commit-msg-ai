@@ -1,0 +1,423 @@
+---
+layout: none
+---
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>commitai - AI Commit Messages from Your Local LLM</title>
+  <meta name="description" content="Generate commit messages from staged changes using a local LLM via Ollama. No API keys, no cloud.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+          animation: {
+            'float': 'float 6s ease-in-out infinite',
+            'float-delayed': 'float 6s ease-in-out 2s infinite',
+            'float-slow': 'float 8s ease-in-out 1s infinite',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'fade-up': 'fadeUp 0.8s ease-out forwards',
+            'fade-up-delay': 'fadeUp 0.8s ease-out 0.2s forwards',
+            'fade-up-delay-2': 'fadeUp 0.8s ease-out 0.4s forwards',
+            'slide-in-right': 'slideInRight 0.8s ease-out 0.3s forwards',
+            'typing': 'typing 2s steps(40) 1s forwards, blink 0.7s step-end infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-20px)' },
+            },
+            fadeUp: {
+              from: { opacity: '0', transform: 'translateY(30px)' },
+              to: { opacity: '1', transform: 'translateY(0)' },
+            },
+            slideInRight: {
+              from: { opacity: '0', transform: 'translateX(40px)' },
+              to: { opacity: '1', transform: 'translateX(0)' },
+            },
+          },
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+    .gradient-text {
+      background: linear-gradient(135deg, #10b981 0%, #34d399 50%, #6ee7b7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-glow {
+      background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.12), transparent);
+    }
+    .card-glow:hover {
+      box-shadow: 0 0 40px rgba(16, 185, 129, 0.08), 0 0 80px rgba(16, 185, 129, 0.04);
+    }
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    .code-block {
+      background: linear-gradient(145deg, #0f172a 0%, #0a1e1a 100%);
+    }
+    .border-glow {
+      border: 1px solid rgba(16, 185, 129, 0.15);
+    }
+    .nav-blur {
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+    }
+    .feature-icon {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(52, 211, 153, 0.1) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+    }
+    .cta-glow {
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.3), 0 0 60px rgba(16, 185, 129, 0.1);
+    }
+    .opacity-0-init { opacity: 0; }
+    @media (max-width: 639px) {
+      .hero-title { font-size: 2.25rem !important; line-height: 1.15 !important; }
+      .code-block pre { font-size: 0.65rem !important; padding: 0.75rem !important; line-height: 1.5 !important; }
+      .code-block .code-header { padding: 0.5rem 0.75rem !important; }
+      .hero-section { min-height: auto !important; padding-top: 5rem !important; padding-bottom: 3rem !important; }
+      .hero-subtitle { font-size: 0.95rem !important; }
+      .hero-buttons a { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+
+<body class="bg-[#030712] text-slate-300 overflow-x-hidden">
+
+<!-- Nav -->
+<nav class="fixed top-0 w-full z-50 nav-blur bg-[#030712]/80 border-b border-white/[0.04]">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="#" class="flex items-center gap-2.5">
+      <div class="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/20">
+        <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <span class="text-white font-bold text-lg">commitai</span>
+    </a>
+    <div class="hidden md:flex items-center gap-8 text-sm">
+      <a href="#features" class="text-slate-400 hover:text-white transition">Features</a>
+      <a href="#how-it-works" class="text-slate-400 hover:text-white transition">How It Works</a>
+      <a href="#getting-started" class="text-slate-400 hover:text-white transition">Getting Started</a>
+      <a href="{{ site.baseurl }}/getting-started/" class="text-slate-400 hover:text-white transition">Docs</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="https://github.com/xavimf87/commitai" target="_blank" class="hidden sm:flex items-center gap-2 rounded-lg border border-white/[0.08] px-4 py-2 text-sm text-slate-300 hover:border-white/20 hover:text-white transition">
+        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="md:hidden flex items-center justify-center h-9 w-9 rounded-lg border border-white/[0.08] text-slate-300 hover:text-white hover:border-white/20 transition">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="mobile-menu" class="hidden md:hidden border-t border-white/[0.04] bg-[#030712]/95 px-6 py-4 space-y-3">
+    <a href="#features" onclick="document.getElementById('mobile-menu').classList.add('hidden')" class="block text-sm text-slate-400 hover:text-white transition py-1">Features</a>
+    <a href="#how-it-works" onclick="document.getElementById('mobile-menu').classList.add('hidden')" class="block text-sm text-slate-400 hover:text-white transition py-1">How It Works</a>
+    <a href="#getting-started" onclick="document.getElementById('mobile-menu').classList.add('hidden')" class="block text-sm text-slate-400 hover:text-white transition py-1">Getting Started</a>
+    <a href="{{ site.baseurl }}/getting-started/" class="block text-sm text-slate-400 hover:text-white transition py-1">Docs</a>
+    <a href="https://github.com/xavimf87/commitai" target="_blank" class="block text-sm text-slate-400 hover:text-white transition py-1">GitHub</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero-section relative min-h-screen flex items-center justify-center hero-glow grid-bg pt-16">
+  <div class="absolute top-1/4 left-1/4 w-72 h-72 bg-emerald-600/10 rounded-full blur-[100px] animate-float"></div>
+  <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-teal-600/8 rounded-full blur-[120px] animate-float-delayed"></div>
+  <div class="absolute top-1/3 right-1/3 w-48 h-48 bg-green-600/5 rounded-full blur-[80px] animate-float-slow"></div>
+
+  <div class="relative max-w-7xl mx-auto px-6 text-center">
+    <div class="opacity-0-init animate-fade-up">
+      <div class="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-4 py-1.5 text-xs font-medium text-emerald-400 mb-8">
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-slow"></span>
+        Local LLM Powered
+      </div>
+    </div>
+
+    <h1 class="hero-title opacity-0-init animate-fade-up text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1] mb-6">
+      Commit messages<br>
+      <span class="gradient-text">written by AI</span>
+    </h1>
+
+    <p class="hero-subtitle opacity-0-init animate-fade-up-delay text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed">
+      Stage your changes, run one command, and get a meaningful commit message generated by a local LLM. No API keys. No cloud. Everything on your machine.
+    </p>
+
+    <div class="hero-buttons opacity-0-init animate-fade-up-delay-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a href="{{ site.baseurl }}/getting-started/" class="group relative inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-3.5 text-sm font-semibold text-white cta-glow hover:bg-emerald-500 transition-all duration-300">
+        Get Started
+        <svg class="h-4 w-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+      </a>
+      <a href="https://github.com/xavimf87/commitai" target="_blank" class="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] px-8 py-3.5 text-sm font-semibold text-slate-300 hover:bg-white/[0.05] hover:border-white/[0.15] transition-all duration-300">
+        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+
+    <!-- Terminal preview -->
+    <div class="opacity-0-init animate-slide-in-right mt-16 max-w-3xl mx-auto text-left">
+      <div class="code-block rounded-2xl border-glow overflow-hidden shadow-2xl shadow-emerald-500/5">
+        <div class="code-header flex items-center gap-2 px-5 py-3 border-b border-white/[0.06]">
+          <div class="flex gap-1.5">
+            <div class="h-3 w-3 rounded-full bg-red-500/60"></div>
+            <div class="h-3 w-3 rounded-full bg-yellow-500/60"></div>
+            <div class="h-3 w-3 rounded-full bg-green-500/60"></div>
+          </div>
+          <span class="text-xs text-slate-500 ml-2 font-mono">terminal</span>
+        </div>
+        <pre class="p-5 text-sm leading-relaxed overflow-x-auto"><code><span class="text-slate-500">$</span> <span class="text-emerald-400">git add .</span>
+<span class="text-slate-500">$</span> <span class="text-emerald-400">commitai</span>
+
+<span class="text-slate-500">Staged files:</span>
+<span class="text-slate-400">M  src/auth.py</span>
+<span class="text-slate-400">A  src/middleware.py</span>
+
+<span class="text-slate-500">Generating commit message with llama3.2...</span>
+
+<span class="text-emerald-500">──────────────────────────────────────────────────</span>
+<span class="text-white font-medium">feat: add JWT authentication middleware</span>
+<span class="text-emerald-500">──────────────────────────────────────────────────</span>
+
+<span class="text-slate-400">Commit with this message?</span> <span class="text-emerald-400">[Y/n]</span> <span class="text-white">y</span>
+<span class="text-slate-500">[main 3a1b2c3] feat: add JWT authentication middleware</span>
+<span class="text-slate-500"> 2 files changed, 45 insertions(+), 3 deletions(-)</span></code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features" class="relative py-16 sm:py-32">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-10 sm:mb-20">
+      <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">Simple by design</h2>
+      <p class="text-lg text-slate-400 max-w-2xl mx-auto">One command. No configuration files. No cloud dependencies. Just good commit messages.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="group rounded-2xl border border-white/[0.04] bg-white/[0.01] p-7 hover:border-emerald-500/20 card-glow transition-all duration-500">
+        <div class="feature-icon h-12 w-12 rounded-xl flex items-center justify-center mb-5">
+          <svg class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25z"/></svg>
+        </div>
+        <h3 class="text-lg font-semibold text-white mb-2">100% Local</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">Runs entirely on your machine via Ollama. Your code never leaves your computer. No API keys or subscriptions needed.</p>
+      </div>
+
+      <div class="group rounded-2xl border border-white/[0.04] bg-white/[0.01] p-7 hover:border-emerald-500/20 card-glow transition-all duration-500">
+        <div class="feature-icon h-12 w-12 rounded-xl flex items-center justify-center mb-5">
+          <svg class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z"/></svg>
+        </div>
+        <h3 class="text-lg font-semibold text-white mb-2">One Command</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">Just type <code class="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded text-xs">commitai</code> after staging. It reads the diff, generates a message, and asks for confirmation.</p>
+      </div>
+
+      <div class="group rounded-2xl border border-white/[0.04] bg-white/[0.01] p-7 hover:border-emerald-500/20 card-glow transition-all duration-500">
+        <div class="feature-icon h-12 w-12 rounded-xl flex items-center justify-center mb-5">
+          <svg class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <h3 class="text-lg font-semibold text-white mb-2">Configurable</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">Set your preferred model once with <code class="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded text-xs">commitai config</code>. Override per-run with <code class="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded text-xs">--model</code>.</p>
+      </div>
+
+      <div class="group rounded-2xl border border-white/[0.04] bg-white/[0.01] p-7 hover:border-emerald-500/20 card-glow transition-all duration-500">
+        <div class="feature-icon h-12 w-12 rounded-xl flex items-center justify-center mb-5">
+          <svg class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <h3 class="text-lg font-semibold text-white mb-2">Clean Format</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">Messages always use <code class="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded text-xs">feat:</code> <code class="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded text-xs">fix:</code> <code class="text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded text-xs">bc:</code> prefixes. No scopes, no noise. Consistent across your team.</p>
+      </div>
+
+      <div class="group rounded-2xl border border-white/[0.04] bg-white/[0.01] p-7 hover:border-emerald-500/20 card-glow transition-all duration-500">
+        <div class="feature-icon h-12 w-12 rounded-xl flex items-center justify-center mb-5">
+          <svg class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+        </div>
+        <h3 class="text-lg font-semibold text-white mb-2">Any Ollama Model</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">Use llama3.2, mistral, qwen2.5-coder, or any model from the Ollama library. Switch models in seconds.</p>
+      </div>
+
+      <div class="group rounded-2xl border border-white/[0.04] bg-white/[0.01] p-7 hover:border-emerald-500/20 card-glow transition-all duration-500">
+        <div class="feature-icon h-12 w-12 rounded-xl flex items-center justify-center mb-5">
+          <svg class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/></svg>
+        </div>
+        <h3 class="text-lg font-semibold text-white mb-2">Zero Lock-in</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">Open source, MIT licensed. No accounts, no telemetry, no vendor lock-in. Just a Python package you install and run.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section id="how-it-works" class="relative py-16 sm:py-32 border-t border-white/[0.04]">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-10 sm:mb-20">
+      <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">How it works</h2>
+      <p class="text-lg text-slate-400 max-w-2xl mx-auto">Three steps. Under 10 seconds.</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <!-- Step 1 -->
+      <div class="text-center">
+        <div class="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-6">
+          <span class="text-2xl font-bold text-emerald-400">1</span>
+        </div>
+        <h3 class="text-lg font-semibold text-white mb-3">Stage your changes</h3>
+        <div class="code-block rounded-xl border-glow p-4 text-left">
+          <code class="text-sm text-slate-300">git add .</code>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="text-center">
+        <div class="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-6">
+          <span class="text-2xl font-bold text-emerald-400">2</span>
+        </div>
+        <h3 class="text-lg font-semibold text-white mb-3">Run commitai</h3>
+        <div class="code-block rounded-xl border-glow p-4 text-left">
+          <code class="text-sm text-slate-300">commitai</code>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="text-center">
+        <div class="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-6">
+          <span class="text-2xl font-bold text-emerald-400">3</span>
+        </div>
+        <h3 class="text-lg font-semibold text-white mb-3">Confirm & commit</h3>
+        <div class="code-block rounded-xl border-glow p-4 text-left">
+          <code class="text-sm"><span class="text-slate-400">Commit?</span> <span class="text-emerald-400">[Y/n]</span> <span class="text-white">y</span></code>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Getting Started -->
+<section id="getting-started" class="relative py-16 sm:py-32 border-t border-white/[0.04]">
+  <div class="max-w-4xl mx-auto px-6">
+    <div class="text-center mb-10 sm:mb-16">
+      <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">Get started in 2 minutes</h2>
+      <p class="text-lg text-slate-400">Install Ollama, pull a model, install commitai. Done.</p>
+    </div>
+
+    <div class="space-y-8">
+      <!-- Step 1 -->
+      <div class="rounded-2xl border border-white/[0.04] bg-white/[0.01] p-6 sm:p-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+            <span class="text-sm font-bold text-emerald-400">1</span>
+          </div>
+          <h3 class="text-lg font-semibold text-white">Install Ollama</h3>
+        </div>
+        <div class="code-block rounded-xl border-glow overflow-hidden">
+          <div class="flex items-center gap-2 px-4 py-2 border-b border-white/[0.06]">
+            <span class="text-xs text-slate-500 font-mono">macOS</span>
+          </div>
+          <pre class="p-4 text-sm"><code><span class="text-slate-500">$</span> <span class="text-emerald-400">brew install ollama</span></code></pre>
+        </div>
+        <p class="text-sm text-slate-500 mt-3">Linux: <code class="text-emerald-300/70 bg-emerald-500/5 px-1.5 py-0.5 rounded text-xs">curl -fsSL https://ollama.com/install.sh | sh</code></p>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="rounded-2xl border border-white/[0.04] bg-white/[0.01] p-6 sm:p-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+            <span class="text-sm font-bold text-emerald-400">2</span>
+          </div>
+          <h3 class="text-lg font-semibold text-white">Pull a model</h3>
+        </div>
+        <div class="code-block rounded-xl border-glow overflow-hidden">
+          <pre class="p-4 text-sm"><code><span class="text-slate-500"># See available models</span>
+<span class="text-slate-500">$</span> <span class="text-emerald-400">ollama list</span>
+
+<span class="text-slate-500"># Pull one (lightweight, ~2GB)</span>
+<span class="text-slate-500">$</span> <span class="text-emerald-400">ollama pull llama3.2</span></code></pre>
+        </div>
+        <p class="text-sm text-slate-500 mt-3">Browse all models at <a href="https://ollama.com/library" target="_blank" class="text-emerald-400 hover:text-emerald-300 underline">ollama.com/library</a></p>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="rounded-2xl border border-white/[0.04] bg-white/[0.01] p-6 sm:p-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+            <span class="text-sm font-bold text-emerald-400">3</span>
+          </div>
+          <h3 class="text-lg font-semibold text-white">Install commitai</h3>
+        </div>
+        <div class="code-block rounded-xl border-glow overflow-hidden">
+          <pre class="p-4 text-sm"><code><span class="text-slate-500">$</span> <span class="text-emerald-400">pipx install git+https://github.com/xavimf87/commitai.git</span></code></pre>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="rounded-2xl border border-white/[0.04] bg-white/[0.01] p-6 sm:p-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+            <span class="text-sm font-bold text-emerald-400">4</span>
+          </div>
+          <h3 class="text-lg font-semibold text-white">Configure your model (optional)</h3>
+        </div>
+        <div class="code-block rounded-xl border-glow overflow-hidden">
+          <pre class="p-4 text-sm"><code><span class="text-slate-500"># Set default model</span>
+<span class="text-slate-500">$</span> <span class="text-emerald-400">commitai config model qwen2.5-coder</span>
+
+<span class="text-slate-500"># Verify</span>
+<span class="text-slate-500">$</span> <span class="text-emerald-400">commitai config</span>
+<span class="text-slate-400">model = qwen2.5-coder</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="relative py-16 sm:py-32 border-t border-white/[0.04]">
+  <div class="max-w-4xl mx-auto px-6 text-center">
+    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">Stop writing commit messages manually</h2>
+    <p class="text-lg text-slate-400 mb-10 max-w-2xl mx-auto">Install commitai and let your local LLM handle the boring stuff.</p>
+
+    <div class="code-block rounded-2xl border-glow overflow-hidden shadow-2xl shadow-emerald-500/5 max-w-2xl mx-auto text-left">
+      <div class="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06]">
+        <div class="flex gap-1.5">
+          <div class="h-3 w-3 rounded-full bg-red-500/60"></div>
+          <div class="h-3 w-3 rounded-full bg-yellow-500/60"></div>
+          <div class="h-3 w-3 rounded-full bg-green-500/60"></div>
+        </div>
+        <span class="text-xs text-slate-500 ml-2 font-mono">terminal</span>
+      </div>
+      <pre class="p-5 text-sm"><code><span class="text-slate-500">$</span> <span class="text-emerald-400">pipx install git+https://github.com/xavimf87/commitai.git</span></code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="border-t border-white/[0.04] py-12">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="h-7 w-7 rounded-lg bg-emerald-600 flex items-center justify-center">
+          <svg class="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <span class="text-white font-semibold">commitai</span>
+      </div>
+      <div class="flex items-center gap-6 text-sm text-slate-500">
+        <a href="{{ site.baseurl }}/getting-started/" class="hover:text-emerald-400 transition">Docs</a>
+        <a href="https://github.com/xavimf87/commitai" target="_blank" class="hover:text-emerald-400 transition">GitHub</a>
+        <span>&copy; 2026 MIT License</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
