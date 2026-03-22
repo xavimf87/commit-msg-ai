@@ -1,4 +1,4 @@
-# commitai
+# commit-msg-ai
 
 Generate commit messages from your staged changes using a local LLM via [Ollama](https://ollama.com). No API keys, no cloud — everything runs on your machine.
 
@@ -6,7 +6,7 @@ Generate commit messages from your staged changes using a local LLM via [Ollama]
 
 ### 1. Install and set up Ollama
 
-commitai requires [Ollama](https://ollama.com) to run language models locally. Install it first:
+commit-msg-ai requires [Ollama](https://ollama.com) to run language models locally. Install it first:
 
 **macOS:**
 
@@ -53,39 +53,39 @@ ollama pull mistral
 
 You can browse all available models at [ollama.com/library](https://ollama.com/library).
 
-### 3. Install commitai
+### 3. Install commit-msg-ai
 
 **With pipx (recommended):**
 
 ```bash
-pipx install git+https://github.com/YOUR_USER/commitai.git
+pipx install git+https://github.com/YOUR_USER/commit-msg-ai.git
 ```
 
 **With pip:**
 
 ```bash
-pip install git+https://github.com/YOUR_USER/commitai.git
+pip install git+https://github.com/YOUR_USER/commit-msg-ai.git
 ```
 
 ### 4. Configure your model
 
-By default commitai uses `llama3.2`. If you pulled a different model, set it as default:
+By default commit-msg-ai uses `llama3.2`. If you pulled a different model, set it as default:
 
 ```bash
-commitai config model qwen2.5-coder
+commit-msg-ai config model qwen2.5-coder
 ```
 
 Verify your config:
 
 ```bash
-commitai config
+commit-msg-ai config
 ```
 
 ### 5. Use it
 
 ```bash
 git add .
-commitai
+commit-msg-ai
 ```
 
 ```
@@ -108,32 +108,32 @@ That's it.
 
 ## Configuration
 
-commitai stores config in `~/.config/commitai/config.json`.
+commit-msg-ai stores config in `~/.config/commit-msg-ai/config.json`.
 
 ```bash
 # Set default model
-commitai config model mistral
+commit-msg-ai config model mistral
 
 # Set Ollama server URL (useful for remote setups)
-commitai config url http://192.168.1.50:11434
+commit-msg-ai config url http://192.168.1.50:11434
 
 # View all config
-commitai config
+commit-msg-ai config
 
 # View a single value
-commitai config model
+commit-msg-ai config model
 ```
 
 Override any config for a single run with flags:
 
 ```bash
-commitai --model codellama
-commitai --url http://other-server:11434
+commit-msg-ai --model codellama
+commit-msg-ai --url http://other-server:11434
 ```
 
 ## Commit message format
 
-commitai generates messages with only three prefixes:
+commit-msg-ai generates messages with only three prefixes:
 
 - `feat:` new features
 - `fix:` bug fixes

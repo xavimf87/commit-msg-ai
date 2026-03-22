@@ -56,14 +56,52 @@ jobs:
           echo "new=$NEW" >> "$GITHUB_OUTPUT"
 
           sed -i "s/version = \"$CURRENT\"/version = \"$NEW\"/" pyproject.toml
-          sed -i "s/__version__ = \"$CURRENT\"/__version__ = \"$NEW\"/" commitai/__init__.py
+          sed -i "s/__version__ = \"$CURRENT\"/__version__ = \"$NEW\"/" commit_msg_ai/__init__.py
+
+      - name: Generate changelog
+        if: steps.bump.outputs.type != 'none'
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            RANGE="HEAD"
+          else
+            RANGE="${PREV_TAG}..HEAD"
+          fi
+
+          {
+            echo 'body<<CHANGELOG_EOF'
+
+            FEATS=$(git log "$RANGE" --pretty=format:"%s" | grep -E "^feat:" | sed 's/^feat: //' || true)
+            if [ -n "$FEATS" ]; then
+              echo "### Features"
+              echo "$FEATS" | while read -r line; do echo "- $line"; done
+              echo ""
+            fi
+
+            FIXES=$(git log "$RANGE" --pretty=format:"%s" | grep -E "^fix:" | sed 's/^fix: //' || true)
+            if [ -n "$FIXES" ]; then
+              echo "### Fixes"
+              echo "$FIXES" | while read -r line; do echo "- $line"; done
+              echo ""
+            fi
+
+            BREAKING=$(git log "$RANGE" --pretty=format:"%s" | grep -E "^bc:" | sed 's/^bc: //' || true)
+            if [ -n "$BREAKING" ]; then
+              echo "### Breaking Changes"
+              echo "$BREAKING" | while read -r line; do echo "- $line"; done
+              echo ""
+            fi
+
+            echo 'CHANGELOG_EOF'
+          } >> "$GITHUB_OUTPUT"
 
       - name: Commit version bump
         if: steps.bump.outputs.type != 'none'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add pyproject.toml commitai/__init__.py
+          git add pyproject.toml commit_msg_ai/__init__.py
           git commit -m "chore: bump version to ${{ steps.version.outputs.new }}"
           git push
 
@@ -76,7 +114,7 @@ jobs:
 
           gh release create "$TAG" \
             --title "$TAG" \
-            --generate-notes
+            --notes "${{ steps.changelog.outputs.body }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -91,8 +129,13 @@ jobs:
           pip install build
           python -m build
 
+      - name: Test package install
+        if: steps.bump.outputs.type != 'none'
+        run: |
+          pip install dist/*.whl
+          commit-msg-ai --help
+          python -c "from commit_msg_ai.main import main; print('Import OK')"
+
       - name: Publish to PyPI
         if: steps.bump.outputs.type != 'none'
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}

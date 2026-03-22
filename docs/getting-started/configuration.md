@@ -7,14 +7,14 @@ nav_order: 4
 
 # Configuration
 
-commitai stores its configuration in `~/.config/commitai/config.json`.
+commit-msg-ai stores its configuration in `~/.config/commit-msg-ai/config.json`.
 
 ## Set your default model
 
-By default, commitai uses `llama3.2`. To change it:
+By default, commit-msg-ai uses `llama3.2`. To change it:
 
 ```bash
-commitai config model qwen2.5-coder
+commit-msg-ai config model qwen2.5-coder
 ```
 
 ## Set a custom Ollama URL
@@ -22,17 +22,17 @@ commitai config model qwen2.5-coder
 If Ollama runs on another machine or port:
 
 ```bash
-commitai config url http://192.168.1.50:11434
+commit-msg-ai config url http://192.168.1.50:11434
 ```
 
 ## View your configuration
 
 ```bash
 # See all settings
-commitai config
+commit-msg-ai config
 
 # See a single value
-commitai config model
+commit-msg-ai config model
 ```
 
 ## Override per run
@@ -41,10 +41,10 @@ Flags override your saved config for a single execution:
 
 ```bash
 # Use a different model just this once
-commitai --model mistral
+commit-msg-ai --model mistral
 
 # Use a different server
-commitai --url http://other-server:11434
+commit-msg-ai --url http://other-server:11434
 ```
 
 ## Config file
@@ -58,7 +58,7 @@ The config is a simple JSON file:
 }
 ```
 
-You can also edit it directly at `~/.config/commitai/config.json`.
+You can also edit it directly at `~/.config/commit-msg-ai/config.json`.
 
 ---
 

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "commitai"
+name = "commit-msg-ai"
 version = "0.2.0"
 description = "Generate commit messages from staged changes using a local LLM via Ollama"
 readme = "README.md"
@@ -29,9 +29,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://xavimf87.github.io/commitai"
-Repository = "https://github.com/xavimf87/commitai"
-Issues = "https://github.com/xavimf87/commitai/issues"
+Homepage = "https://xavimf87.github.io/commit-msg-ai"
+Repository = "https://github.com/xavimf87/commit-msg-ai"
+Issues = "https://github.com/xavimf87/commit-msg-ai/issues"
 
 [project.scripts]
-commitai = "commitai.main:main"
+commit-msg-ai = "commit_msg_ai.main:main"

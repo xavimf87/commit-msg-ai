@@ -7,7 +7,7 @@ nav_order: 2
 
 # Choose a Model
 
-commitai works with any model available in Ollama. You need at least one downloaded.
+commit-msg-ai works with any model available in Ollama. You need at least one downloaded.
 
 ## List your models
 
@@ -43,7 +43,7 @@ Start with `llama3.2` if you're unsure. It's small, fast, and produces good comm
 
 ## Browse all models
 
-The full catalog is at [ollama.com/library](https://ollama.com/library). Any model that works with Ollama works with commitai.
+The full catalog is at [ollama.com/library](https://ollama.com/library). Any model that works with Ollama works with commit-msg-ai.
 
 ## Test your model
 
@@ -53,8 +53,8 @@ Make sure it's working:
 ollama run llama3.2 "Say hello"
 ```
 
-If you get a response, you're ready to install commitai.
+If you get a response, you're ready to install commit-msg-ai.
 
 ---
 
-Next: [Install commitai]({{ site.baseurl }}/getting-started/install-commitai/)
+Next: [Install commit-msg-ai]({{ site.baseurl }}/getting-started/install-commit-msg-ai/)

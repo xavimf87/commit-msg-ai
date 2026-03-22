@@ -28,7 +28,7 @@ Rules:
 
 DEFAULT_MODEL = "llama3.2"
 DEFAULT_URL = "http://localhost:11434"
-CONFIG_PATH = Path.home() / ".config" / "commitai" / "config.json"
+CONFIG_PATH = Path.home() / ".config" / "commit-msg-ai" / "config.json"
 
 
 def load_config() -> dict:
@@ -129,7 +129,7 @@ def cmd_config(args):
 
     if args.key is None:
         if not config:
-            print("No config set. Use: commitai config model <value>")
+            print("No config set. Use: commit-msg-ai config model <value>")
         else:
             for k, v in config.items():
                 print(f"{k} = {v}")

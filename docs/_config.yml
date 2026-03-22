@@ -1,6 +1,6 @@
-title: commitai
+title: commit-msg-ai
 description: Generate commit messages with a local LLM
-baseurl: /commitai
+baseurl: /commit-msg-ai
 url: https://xavimf87.github.io
 remote_theme: just-the-docs/just-the-docs@v0.10.0
 
@@ -16,7 +16,7 @@ exclude:
   - Gemfile.lock
 
 aux_links:
-  GitHub: https://github.com/xavimf87/commitai
+  GitHub: https://github.com/xavimf87/commit-msg-ai
 
 nav_sort: case_insensitive
 
@@ -25,7 +25,7 @@ search_enabled: true
 back_to_top: true
 back_to_top_text: "Back to top"
 
-footer_content: "commitai &copy; 2026. MIT License."
+footer_content: "commit-msg-ai &copy; 2026. MIT License."
 
 callouts:
   warning:

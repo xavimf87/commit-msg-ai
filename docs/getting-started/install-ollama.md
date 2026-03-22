@@ -7,7 +7,7 @@ nav_order: 1
 
 # Install Ollama
 
-commitai requires [Ollama](https://ollama.com) to run language models locally on your machine. Ollama handles downloading, running, and managing LLMs.
+commit-msg-ai requires [Ollama](https://ollama.com) to run language models locally on your machine. Ollama handles downloading, running, and managing LLMs.
 
 ## macOS
 

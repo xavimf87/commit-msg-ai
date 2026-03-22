@@ -17,10 +17,10 @@ vim src/auth.py
 git add src/auth.py
 
 # 3. Generate commit message
-commitai
+commit-msg-ai
 ```
 
-commitai will:
+commit-msg-ai will:
 
 1. Read your staged diff (`git diff --staged`)
 2. Show which files are staged
@@ -58,16 +58,16 @@ All generated messages use one of three prefixes:
 | `bc:` | Breaking changes |
 
 {: .note }
-commitai never generates scoped prefixes like `feat(auth):`. Only clean `feat:`, `fix:`, or `bc:`.
+commit-msg-ai never generates scoped prefixes like `feat(auth):`. Only clean `feat:`, `fix:`, or `bc:`.
 
 ## Using a different model
 
 ```bash
 # Override for this run
-commitai --model mistral
+commit-msg-ai --model mistral
 
 # Or change your default
-commitai config model mistral
+commit-msg-ai config model mistral
 ```
 
 ## No staged changes?
@@ -78,4 +78,4 @@ If you see:
 No staged changes found. Stage your changes with `git add` first.
 ```
 
-Make sure to run `git add` before `commitai`.
+Make sure to run `git add` before `commit-msg-ai`.

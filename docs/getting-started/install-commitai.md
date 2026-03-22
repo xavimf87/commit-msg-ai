@@ -1,18 +1,18 @@
 ---
 layout: default
-title: Install commitai
+title: Install commit-msg-ai
 parent: Getting Started
 nav_order: 3
 ---
 
-# Install commitai
+# Install commit-msg-ai
 
 ## With pipx (recommended)
 
 [pipx](https://pipx.pypa.io/) installs Python CLI tools in isolated environments:
 
 ```bash
-pipx install git+https://github.com/xavimf87/commitai.git
+pipx install git+https://github.com/xavimf87/commit-msg-ai.git
 ```
 
 {: .tip }
@@ -21,19 +21,19 @@ If you don't have pipx: `brew install pipx` (macOS) or `pip install pipx` (any p
 ## With pip
 
 ```bash
-pip install git+https://github.com/xavimf87/commitai.git
+pip install git+https://github.com/xavimf87/commit-msg-ai.git
 ```
 
 ## Verify installation
 
 ```bash
-commitai --help
+commit-msg-ai --help
 ```
 
 You should see:
 
 ```
-usage: commitai [-h] [--model MODEL] [--url URL] {config} ...
+usage: commit-msg-ai [-h] [--model MODEL] [--url URL] {config} ...
 
 Generate a commit message from staged changes using a local LLM.
 ```
