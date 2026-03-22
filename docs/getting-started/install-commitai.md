@@ -7,21 +7,10 @@ nav_order: 3
 
 # Install commit-msg-ai
 
-## With pipx (recommended)
-
-[pipx](https://pipx.pypa.io/) installs Python CLI tools in isolated environments:
-
-```bash
-pipx install git+https://github.com/xavimf87/commit-msg-ai.git
-```
-
-{: .tip }
-If you don't have pipx: `brew install pipx` (macOS) or `pip install pipx` (any platform).
-
 ## With pip
 
 ```bash
-pip install git+https://github.com/xavimf87/commit-msg-ai.git
+pip install commit-msg-ai
 ```
 
 ## Verify installation

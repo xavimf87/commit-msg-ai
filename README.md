@@ -55,16 +55,8 @@ You can browse all available models at [ollama.com/library](https://ollama.com/l
 
 ### 3. Install commit-msg-ai
 
-**With pipx (recommended):**
-
 ```bash
-pipx install git+https://github.com/YOUR_USER/commit-msg-ai.git
-```
-
-**With pip:**
-
-```bash
-pip install git+https://github.com/YOUR_USER/commit-msg-ai.git
+pip install commit-msg-ai
 ```
 
 ### 4. Configure your model
