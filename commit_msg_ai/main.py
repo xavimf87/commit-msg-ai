@@ -1,5 +1,6 @@
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -55,6 +56,19 @@ def get_staged_diff() -> str:
         print(f"Error running git diff: {result.stderr}", file=sys.stderr)
         sys.exit(1)
     return result.stdout
+
+
+def get_branch_issue() -> str | None:
+    result = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return None
+    branch = result.stdout.strip()
+    match = re.search(r"/([A-Z][A-Z0-9]+-\d+)", branch)
+    return match.group(1) if match else None
 
 
 def get_staged_files() -> str:
@@ -163,6 +177,10 @@ def cmd_run(args):
     print(f"Generating commit message with {model}...\n")
 
     message = generate_message(diff, files, model, url)
+
+    issue = get_branch_issue()
+    if issue:
+        message = re.sub(r"^(feat|fix|bc):\s*", rf"\1: [{issue}] ", message)
 
     print("─" * 50)
     print(message)
