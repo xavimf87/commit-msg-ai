@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "commit-msg-ai"
-version = "0.3.0"
+version = "0.4.0"
 description = "Generate commit messages from staged changes using a local LLM via Ollama"
 readme = "README.md"
 requires-python = ">=3.9"
