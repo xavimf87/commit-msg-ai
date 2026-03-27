@@ -50,6 +50,14 @@ PROVIDERS = {
         },
         "extract": lambda data: data["choices"][0]["message"]["content"],
     },
+    "qwen": {
+        "endpoint": "/v1/chat/completions",
+        "build_payload": lambda model, messages: {
+            "model": model,
+            "messages": messages,
+        },
+        "extract": lambda data: data["generated_text"],
+    },
 }
 
 
