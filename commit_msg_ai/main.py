@@ -29,7 +29,28 @@ Rules:
 
 DEFAULT_MODEL = "llama3.2"
 DEFAULT_URL = "http://localhost:11434"
+DEFAULT_PROVIDER = "ollama"
 CONFIG_PATH = Path.home() / ".config" / "commit-msg-ai" / "config.json"
+
+PROVIDERS = {
+    "ollama": {
+        "endpoint": "/api/chat",
+        "build_payload": lambda model, messages: {
+            "model": model,
+            "messages": messages,
+            "stream": False,
+        },
+        "extract": lambda data: data["message"]["content"],
+    },
+    "openai": {
+        "endpoint": "/v1/chat/completions",
+        "build_payload": lambda model, messages: {
+            "model": model,
+            "messages": messages,
+        },
+        "extract": lambda data: data["choices"][0]["message"]["content"],
+    },
+}
 
 
 def load_config() -> dict:
@@ -80,7 +101,7 @@ def get_staged_files() -> str:
     return result.stdout.strip()
 
 
-def generate_message(diff: str, files: str, model: str, url: str) -> str:
+def generate_message(diff: str, files: str, model: str, url: str, provider: str) -> str:
     max_diff_chars = 12000
     truncated = len(diff) > max_diff_chars
 
@@ -93,32 +114,35 @@ def generate_message(diff: str, files: str, model: str, url: str) -> str:
 
     user_prompt = "Generate a commit message for these changes:\n\n" + "\n".join(parts)
 
+    if provider not in PROVIDERS:
+        print(f"Error: Unknown provider '{provider}'. Available: {', '.join(PROVIDERS)}", file=sys.stderr)
+        sys.exit(1)
+
+    prov = PROVIDERS[provider]
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": user_prompt},
+    ]
+
     try:
         response = httpx.post(
-            f"{url}/api/chat",
-            json={
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": user_prompt},
-                ],
-                "stream": False,
-            },
+            f"{url}{prov['endpoint']}",
+            json=prov["build_payload"](model, messages),
             timeout=60.0,
         )
         response.raise_for_status()
     except httpx.ConnectError:
         print(
-            "Error: Cannot connect to Ollama. Is it running?\n"
+            f"Error: Cannot connect to {provider} server.\n"
             f"Expected at: {url}",
             file=sys.stderr,
         )
         sys.exit(1)
     except httpx.HTTPStatusError as e:
-        print(f"Error from Ollama: {e.response.text}", file=sys.stderr)
+        print(f"Error from {provider}: {e.response.text}", file=sys.stderr)
         sys.exit(1)
 
-    return response.json()["message"]["content"].strip()
+    return prov["extract"](response.json()).strip()
 
 
 def confirm(prompt: str) -> bool:
@@ -166,6 +190,7 @@ def cmd_run(args):
     config = load_config()
     model = args.model or config.get("model", DEFAULT_MODEL)
     url = args.url or config.get("url", DEFAULT_URL)
+    provider = args.provider or config.get("provider", DEFAULT_PROVIDER)
 
     diff = get_staged_diff()
     if not diff.strip():
@@ -174,9 +199,9 @@ def cmd_run(args):
 
     files = get_staged_files()
     print(f"Staged files:\n{files}\n")
-    print(f"Generating commit message with {model}...\n")
+    print(f"Generating commit message with {model} ({provider})...\n")
 
-    message = generate_message(diff, files, model, url)
+    message = generate_message(diff, files, model, url, provider)
 
     issue = get_branch_issue()
     if issue:
@@ -195,18 +220,19 @@ def cmd_run(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate a commit message from staged changes using a local LLM.",
+        description="Generate a commit message from staged changes using an LLM.",
     )
     sub = parser.add_subparsers(dest="command")
 
     # config subcommand
-    cfg = sub.add_parser("config", help="Get or set config values (model, url)")
+    cfg = sub.add_parser("config", help="Get or set config values (model, url, provider)")
     cfg.add_argument("key", nargs="?", help="Config key (model, url)")
     cfg.add_argument("value", nargs="?", help="Value to set")
 
     # Default run flags (also work without subcommand)
-    parser.add_argument("--model", default=None, help="Ollama model to use")
-    parser.add_argument("--url", default=None, help="Ollama server URL")
+    parser.add_argument("--model", default=None, help="Model to use")
+    parser.add_argument("--url", default=None, help="Server URL")
+    parser.add_argument("--provider", default=None, help=f"Provider ({', '.join(PROVIDERS)})")
 
     args = parser.parse_args()
 

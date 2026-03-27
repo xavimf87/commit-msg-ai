@@ -1,6 +1,6 @@
 # commit-msg-ai
 
-Generate commit messages from your staged changes using a local LLM via [Ollama](https://ollama.com). No API keys, no cloud — everything runs on your machine.
+Generate commit messages from your staged changes using an LLM. Supports [Ollama](https://ollama.com) for local models and any OpenAI-compatible API (vLLM, LiteLLM, text-generation-inference, etc.).
 
 ## Getting started
 
@@ -109,6 +109,9 @@ commit-msg-ai config model mistral
 # Set Ollama server URL (useful for remote setups)
 commit-msg-ai config url http://192.168.1.50:11434
 
+# Set provider (ollama or openai)
+commit-msg-ai config provider ollama
+
 # View all config
 commit-msg-ai config
 
@@ -121,6 +124,29 @@ Override any config for a single run with flags:
 ```bash
 commit-msg-ai --model codellama
 commit-msg-ai --url http://other-server:11434
+commit-msg-ai --provider openai
+```
+
+## Providers
+
+### Ollama (default)
+
+Uses Ollama's `/api/chat` endpoint. This is the default provider — no extra configuration needed beyond installing Ollama.
+
+### OpenAI-compatible API
+
+Uses the `/v1/chat/completions` endpoint, compatible with any server that implements the OpenAI API format: vLLM, LiteLLM, text-generation-inference, Qwen, etc.
+
+```bash
+commit-msg-ai config provider openai
+commit-msg-ai config url https://your-server.example.com
+commit-msg-ai config model your-model-name
+```
+
+Or use flags for a single run:
+
+```bash
+commit-msg-ai --provider openai --url https://your-server.example.com --model your-model-name
 ```
 
 ## Commit message format
@@ -134,5 +160,6 @@ commit-msg-ai generates messages with only three prefixes:
 ## Requirements
 
 - Python 3.9+
-- [Ollama](https://ollama.com) running locally (or on a reachable server)
-- At least one model pulled (`ollama pull llama3.2`)
+- One of:
+  - [Ollama](https://ollama.com) running locally or on a reachable server
+  - Any OpenAI-compatible API server
